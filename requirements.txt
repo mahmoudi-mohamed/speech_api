@@ -1,6 +1,6 @@
 fastapi
 uvicorn
 torch
-transformers
 soundfile
 pydantic
+piper-tts

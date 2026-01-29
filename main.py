@@ -1,20 +1,28 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from transformers import pipeline
+from piper import PiperVoice
+import wave
 import base64
+import tempfile
 
 app = FastAPI(title="Arabic TTS API")
 
 # تحميل الموديل
-tts = pipeline("text-to-speech", "Reyouf/speecht5_tts_Arabic")
+voice = PiperVoice.load("arabic-emirati-female-model.onnx")
 
 class TextRequest(BaseModel):
     text: str
 
 @app.post("/tts")
 def text_to_speech(request: TextRequest):
-    output = tts(request.text)
-    audio_bytes = output["audio"]
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as tmp_wav_file:
+        wav_file_path = tmp_wav_file.name
+        with wave.open(wav_file_path, "wb") as wav_file:
+            voice.synthesize_wav(request.text, wav_file)
+
+        with open(wav_file_path, "rb") as f:
+            audio_bytes = f.read()
+
     audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
     return {"audio_base64": audio_b64}
 
